@@ -309,13 +309,13 @@
 	ldr	r7, =0x10000008
 	str	r7, [r5, #DDRPHY_OFFSETD_CON0]
 
-	ldr	r7, =0x08080808
+	ldr	r7, =0x0A0A0A0A
 	str	r7, [r5, #DDRPHY_OFFSETR_CON0]
 	str	r7, [r5, #DDRPHY_OFFSETR_CON1]
 	ldr	r7, =0x8
 	str	r7, [r5, #DDRPHY_OFFSETR_CON2]
 
-	ldr	r7, =0x08080808
+	ldr	r7, =0x06060606
 	str	r7, [r5, #DDRPHY_OFFSETW_CON0]
 	str	r7, [r5, #DDRPHY_OFFSETW_CON1]
 	ldr	r7, =0x8

@@ -1,0 +1,18 @@
+= Linux Kernel for Ronetix i.MX7-CM board
+
+Building the Linux Kernel base on https://source.codeaurora.org/external/imx/linux-imx.git
+
+Setup the cross compiler and CPU architecture:
+[source,console]
+$: export ARCH=arm
+$: export CROSS_COMPILE=/opt/cross/arm-ronetix-eabi-8.3.0/bin/arm-ronetix-eabi-
+
+Clone the latest revision of the repo:
+[source,console]
+$: git clone https://github.com/ronetix/linux.git linux-ronetix --depth=1
+$: git checkout remotes/origin/imx_4.19.35_1.0.0 -b imx_4.19.35_1.0.0
+
+Configure and build:
+[source,console]
+$: make imx7_cm_defconfig
+$: make
