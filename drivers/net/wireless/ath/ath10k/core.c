@@ -971,33 +971,6 @@ static void ath10k_core_free_firmware_files(struct ath10k *ar)
 	ar->pre_cal_file = NULL;
 }
 
-static int ath10k_fetch_cal_file(struct ath10k *ar)
-{
-	char filename[100];
-
-	/* pre-cal-<bus>-<id>.bin */
-	scnprintf(filename, sizeof(filename), "pre-cal-%s-%s.bin",
-		  ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
-
-	ar->pre_cal_file = ath10k_fetch_fw_file(ar, ATH10K_FW_DIR, filename);
-	if (!IS_ERR(ar->pre_cal_file))
-		goto success;
-
-	/* cal-<bus>-<id>.bin */
-	scnprintf(filename, sizeof(filename), "cal-%s-%s.bin",
-		  ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
-
-	ar->cal_file = ath10k_fetch_fw_file(ar, ATH10K_FW_DIR, filename);
-	if (IS_ERR(ar->cal_file))
-		/* calibration file is optional, don't print any warnings */
-		return PTR_ERR(ar->cal_file);
-success:
-	ath10k_dbg(ar, ATH10K_DBG_BOOT, "found calibration file %s/%s\n",
-		   ATH10K_FW_DIR, filename);
-
-	return 0;
-}
-
 static int ath10k_core_fetch_board_data_api_1(struct ath10k *ar)
 {
 	if (!ar->hw_params.fw.board) {
@@ -1471,9 +1444,6 @@ static int ath10k_core_fetch_firmware_files(struct ath10k *ar)
 {
 	int ret, i;
 	char fw_name[100];
-
-	/* calibration file is optional, don't check for any errors */
-	ath10k_fetch_cal_file(ar);
 
 	for (i = ATH10K_FW_API_MAX; i >= ATH10K_FW_API_MIN; i--) {
 		ar->fw_api = i;
