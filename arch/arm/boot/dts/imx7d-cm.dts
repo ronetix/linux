@@ -18,24 +18,17 @@
 	};
 
 	memory: memory@80000000 {
-		reg = <0x80000000 0x20000000>;
+		reg = <0x80000000 0x20000000>;		/* 512 MB */
 	};
 
-	gpio-keys {
-		compatible = "gpio-keys";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_keys>;
-
-		volume-up {
-			label = "Volume Up";
-			gpios = <&gpio5 11 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_VOLUMEUP>;
-		};
-
-		volume-down {
-			label = "Volume Down";
-			gpios = <&gpio5 10 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_VOLUMEDOWN>;
+	resmem: reserved-memory {
+		linux,cma {
+			/*
+			 * 0x0400_0000 -  64 MB
+			 * 0x1000_0000 - 256 MB
+			 * 0x1800_0000 - 384 MB, when CSI is used
+			 */
+			size = <0x04000000>;
 		};
 	};
 
@@ -153,11 +146,16 @@
 
 #ifdef IMX7_CM_FULL
 	sound {
-		compatible = "fsl,imx7d-cm-wm8960", "fsl,imx-audio-wm8960";
+		compatible = "fsl,imx7d-evk-wm8960", "fsl,imx-audio-wm8960";
 		model = "wm8960-audio";
 		cpu-dai = <&sai1>;
 		audio-codec = <&codec>;
 		codec-master;
+		/* i.MX7-CM v2.0 doesn't have HP jack detect
+		 * The switching Speaker/Headphone should be done manually
+		 */
+		hp-det = <2 0>;
+		hp-det-gpios = <&gpio2 28 0>;
 		audio-routing =
 			"Headphone Jack", "HP_L",
 			"Headphone Jack", "HP_R",
@@ -280,15 +278,50 @@
 	fsl,magic-packet;
 	phy-reset-gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 	status = "okay";
-	fsl,mii-exclusive;
 
 	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ethphy0: ethernet-phy@0 {
+		ethphy0: ethernet-phy@1 {
 			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
+			reg = <1>;
+
+			/* All skews are offset since hardware skew values for the ksz9031
+			 * range from a negative skew to a positive skew. The increment
+			 * step is 60ps.
+			 * See the micrel-ksz90x1.txt Documentation file for details.
+			 */
+
+			/* -900ps up t0 +960ps
+			 *   0 	(reg val  0) -> -900 ps
+			 *  900	(reg val 15) ->    0 ps
+			 * 1860	(reg val 31) -> +960 ps
+			 *
+			 */
+			rxc-skew-ps = <960>; /*  */
+			txc-skew-ps = <960>; /*  */
+
+			/* -420ps up to 480ps
+			 *   0 (reg val  0)	-> -420 ps
+			 * 420 (reg val  7)	->    0 ps
+			 * 900 (reg val 15)	-> +480 ps
+			 * */
+			txd0-skew-ps = <420>; /* ps */
+			txd1-skew-ps = <420>; /* ps */
+			txd2-skew-ps = <420>; /* ps */
+			txd3-skew-ps = <420>; /* ps */
+			rxd0-skew-ps = <420>; /* ps */
+			rxd1-skew-ps = <420>; /* ps */
+			rxd2-skew-ps = <420>; /* ps */
+			rxd3-skew-ps = <420>; /* ps */
+			txen-skew-ps = <420>; /* ps */
+			rxdv-skew-ps = <420>; /* ps */
+		};
+
+		ethphy1: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
 
 			/* All skews are offset since hardware skew values for the ksz9031
 			 * range from a negative skew to a positive skew. The increment
@@ -340,17 +373,6 @@
 	phy-handle = <&ethphy1>;
 	fsl,magic-packet;
 	status = "okay";
-	fsl,mii-exclusive;
-
-	mdio {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		ethphy1: ethernet-phy@0 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
-		};
-	};
 };
 
 &flexcan2 {
@@ -501,9 +523,9 @@
 	pinctrl-0 = <&pinctrl_i2c4>;
 	status = "okay";
 
-	codec: wm8960@1b {
+	codec: wm8960@1a {
 		compatible = "wlf,wm8960";
-		reg = <0x1b>;
+		reg = <0x1a>;
 		clocks = <&clks IMX7D_AUDIO_MCLK_ROOT_CLK>;
 		clock-names = "mclk";
 		wlf,shared-lrclk;
@@ -534,7 +556,7 @@
 	{
 		compatible = "ti,sn65dsi83";
 		reg = <0x2c>;
-		enable-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&pinctrl_lvds_bridge>;
 		status = "okay";
 		lvds_panel
@@ -852,7 +874,7 @@
 				MX7D_PAD_ENET1_RGMII_RD2__ENET1_RGMII_RD2	0x1
 				MX7D_PAD_ENET1_RGMII_RD3__ENET1_RGMII_RD3	0x1
 				MX7D_PAD_ENET1_RGMII_RX_CTL__ENET1_RGMII_RX_CTL	0x1
-				MX7D_PAD_LPSR_GPIO1_IO04__GPIO1_IO4			0x14		/* ETH_RESET */
+				MX7D_PAD_EPDC_DATA04__GPIO2_IO4				0x14		/* ETH_RESET */
 			>;
 		};
 
@@ -878,15 +900,8 @@
 		 */
 		pinctrl_flexcan2: flexcan2grp {
 			fsl,pins = <
-				/* i.MX7-CM v1.0 */
-/*				MX7D_PAD_I2C3_SCL__FLEXCAN2_RX	0x59
-				MX7D_PAD_I2C3_SDA__FLEXCAN2_TX	0x59
-*/
-
-				/* i.MX7-CM v2.0 */
-/*				MX7D_PAD_GPIO1_IO14__FLEXCAN2_RX	0x59
+				MX7D_PAD_GPIO1_IO14__FLEXCAN2_RX	0x59
 				MX7D_PAD_GPIO1_IO15__FLEXCAN2_TX	0x59
-*/
 			>;
 		};
 
@@ -967,7 +982,7 @@
 
 		pinctrl_lvds_bridge: lvdsgrp {
 			fsl,pins = <
-				MX7D_PAD_LPSR_GPIO1_IO02__GPIO1_IO2      0x14
+				MX7D_PAD_SD2_WP__GPIO5_IO10      	0x14
 			>;
 		};
 
