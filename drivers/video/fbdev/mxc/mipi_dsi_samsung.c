@@ -69,6 +69,37 @@ static struct mipi_dsi_match_lcd mipi_dsi_lcd_db[] = {
 	 {mipid_hx8363_get_lcd_videomode, mipid_hx8363_lcd_setup}
 	},
 #endif
+#ifdef CONFIG_FB_MXC_SN65DSI8X
+	{
+		"SN65DSI_default",
+		{
+			sn65dsi83_get_lcd_videomode,
+			sn65dsi83_lcd_setup,
+			sn65dsi83_lcd_start,
+			sn65dsi83_lcd_stop
+		},
+		{
+			/* InnoLux G070Y2-L01, 800x480, pixel clock = 29.5MHz (177MHz / 6)
+			 * RGB888, LCD signal FRC=H
+			 * P_PMS = 4
+			 * M_PMS = 59
+			 * S_PMS = 1 means divided by 2, S_DIV = 2
+			 * Fin = 24MHz
+			 * Fout = (Fin * M) / (P * S_DIV)
+			 * Fout = 177MHz
+			 */
+			MIPI_DSI_PLLCTRL_VALUE(1, 4, 59, 1),
+			(MIPI_DSI_M_TLPXCTL(3) | MIPI_DSI_M_THSEXITCTL(5)),
+			(MIPI_DSI_M_TCLKPRPRCTL(3) |
+			 MIPI_DSI_M_TCLKZEROCTL(20) |
+			 MIPI_DSI_M_TCLKPOSTCTL(9) |
+			 MIPI_DSI_M_TCLKTRAILCTL(4)),
+			(MIPI_DSI_M_THSPRPRCTL(5) |
+			 MIPI_DSI_M_THSZEROCTL(6) |
+			 MIPI_DSI_M_THSTRAILCTL(7))
+		}
+	},
+#endif
 	{
 	"", {NULL, NULL}
 	}
@@ -103,6 +134,8 @@ static int mipi_dsi_lcd_init(struct mipi_dsi_info *mipi_dsi,
 			mipi_dsi_lcd_db[i].lcd_panel)) {
 			mipi_dsi->lcd_callback =
 				&mipi_dsi_lcd_db[i].lcd_callback;
+			mipi_dsi->host_timing =
+				&mipi_dsi_lcd_db[i].host_timing;
 			break;
 		}
 	}
@@ -377,11 +410,8 @@ static int mipi_dsi_master_init(struct mipi_dsi_info *mipi_dsi,
 	       MIPI_DSI_PLL_BYPASS(0) |
 	       MIPI_DSI_BYTE_CLK_SRC(0),
 	       mipi_dsi->mmio_base + MIPI_DSI_CLKCTRL);
-	if (!strcmp(mipi_dsi->lcd_panel, "TRULY-WVGA-TFT3P5581E"))
-		writel(MIPI_DSI_PLL_EN(1) | MIPI_DSI_PMS(0x3141),
-		       mipi_dsi->mmio_base + MIPI_DSI_PLLCTRL);
-	else
-		writel(MIPI_DSI_PLL_EN(1) | MIPI_DSI_PMS(0x4190),
+
+	writel(MIPI_DSI_PLL_EN(1) | mipi_dsi->host_timing->mipi_dsi_pllctrl_pms,
 		       mipi_dsi->mmio_base + MIPI_DSI_PLLCTRL);
 
 	/* set PLLTMR: stable time */
@@ -438,31 +468,12 @@ static int mipi_dsi_master_init(struct mipi_dsi_info *mipi_dsi,
 	       mipi_dsi->mmio_base + MIPI_DSI_MSYNC);
 
 	/* configure d-phy timings */
-	if (!strcmp(mipi_dsi->lcd_panel, "TRULY-WVGA-TFT3P5581E")) {
-		writel(MIPI_DSI_M_TLPXCTL(2) | MIPI_DSI_M_THSEXITCTL(4),
+	writel(mipi_dsi->host_timing->mipi_dsi_phytiming,
 			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING);
-		writel(MIPI_DSI_M_TCLKPRPRCTL(5) |
-			MIPI_DSI_M_TCLKZEROCTL(14) |
-			MIPI_DSI_M_TCLKPOSTCTL(8) |
-			MIPI_DSI_M_TCLKTRAILCTL(3),
+	writel(mipi_dsi->host_timing->mipi_dsi_phytiming1,
 			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING1);
-		writel(MIPI_DSI_M_THSPRPRCTL(3) |
-			MIPI_DSI_M_THSZEROCTL(3) |
-			MIPI_DSI_M_THSTRAILCTL(3),
+	writel(mipi_dsi->host_timing->mipi_dsi_phytiming2,
 			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING2);
-	} else {
-		writel(MIPI_DSI_M_TLPXCTL(11) | MIPI_DSI_M_THSEXITCTL(18),
-			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING);
-		writel(MIPI_DSI_M_TCLKPRPRCTL(13) |
-			MIPI_DSI_M_TCLKZEROCTL(65) |
-			MIPI_DSI_M_TCLKPOSTCTL(17) |
-			MIPI_DSI_M_TCLKTRAILCTL(13),
-			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING1);
-		writel(MIPI_DSI_M_THSPRPRCTL(16) |
-			MIPI_DSI_M_THSZEROCTL(24) |
-			MIPI_DSI_M_THSTRAILCTL(16),
-			mipi_dsi->mmio_base + MIPI_DSI_PHYTIMING2);
-	}
 
 	writel(0xf000f, mipi_dsi->mmio_base + MIPI_DSI_TIMEOUT);
 
@@ -615,6 +626,11 @@ static int mipi_dsi_enable(struct mxc_dispdrv_handle *disp,
 
 	mipi_dsi_set_main_standby(mipi_dsi, 1);
 
+	if (mipi_dsi->lcd_callback->mipi_lcd_start) {
+			msleep(120);
+			mipi_dsi->lcd_callback->mipi_lcd_start(mipi_dsi);
+	}
+
 	return 0;
 }
 
@@ -634,9 +650,12 @@ static void mipi_dsi_disable(struct mxc_dispdrv_handle *disp,
 
 		if (mipi_dsi->disp_power_on)
 			regulator_disable(mipi_dsi->disp_power_on);
+	}
+
+	if (mipi_dsi->lcd_callback->mipi_lcd_stop)
+			mipi_dsi->lcd_callback->mipi_lcd_stop(mipi_dsi);
 
 		mipi_dsi->lcd_inited = 0;
-	}
 }
 
 static int mipi_dsi_setup(struct mxc_dispdrv_handle *disp,

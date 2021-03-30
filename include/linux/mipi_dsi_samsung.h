@@ -87,6 +87,8 @@
 #define MIPI_DSI_DP_DN_SWAP_DATA	(0x1 << 24)
 #define MIPI_DSI_PLL_EN(x)		(((x) & 0x1) << 23)
 #define MIPI_DSI_PMS(x)			(((x) & 0x7ffff) << 1)
+#define MIPI_DSI_PLLCTRL_VALUE(en, p, m, s) ((en << 23) | (p << 13) | \
+											(m << 4) | (s << 1))
 
 #define MIPI_DSI_TX_REQUEST_HSCLK(x)	(((x) & 0x1) << 31)
 #define MIPI_DSI_DPHY_SEL(x)		(((x) & 0x1) << 29)
