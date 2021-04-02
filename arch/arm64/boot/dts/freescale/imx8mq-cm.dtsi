@@ -11,7 +11,7 @@
 
 / {
 	model = "Ronetix i.MX8MQ-CM";
-	compatible = "fsl,imx8mq-evk", "fsl,imx8mq";
+	compatible = "fsl,imx8mq-cm", "fsl,imx8mq";
 
 	chosen {
 		stdout-path = &uart1;
