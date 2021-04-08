@@ -461,10 +461,8 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_lvds>;
 		status = "disabled";
-#if 0
-		enable-test-pattern;
-#endif
-		display-timings {
+
+display-timings {
 			/* InnoLux G070Y2-L01 - doesn't work because of
 			 * display pixel clock driver limitation to 74250 kHz (dcss-dtg.c)
 			 *
