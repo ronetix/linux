@@ -42,7 +42,7 @@
 
 	modem_reset: modem-reset {
 		compatible = "gpio-reset";
-		reset-gpios = <&gpio4 23 GPIO_ACTIVE_LOW>;	/* BT_REG_ON, ball J6*/
+		reset-gpios = <&gpio4 23 GPIO_ACTIVE_LOW>;	/* BT_REG_ON, CPU pin J6 */
 		reset-delay-us = <1000>;
 		#reset-cells = <0>;
 	};
@@ -125,8 +125,6 @@
 	/* on i.MX7-CM no mipi_dsi_reset is routed, but it is required
 	 * by the kernel driver.
 	 * GPIO4_IO4 (CPU pin M2) is used because it is not connetced.
-	 * If GPIO1_IO02 (SN65DSI83 reset) is used for mipi_dsi_reset,
-	 * then the LCD doesn't work.
 	 */
 	mipi_dsi_reset: mipi-dsi-reset {
         compatible = "gpio-reset";
@@ -143,16 +141,6 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		gpio = <&gpio2 14 GPIO_ACTIVE_LOW>;
-	};
-
-	reg_fec2_3v3: regulator-fec2-3v3 {
-		compatible = "regulator-fixed";
-		regulator-name = "fec2-3v3";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_enet2_reg>;
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio1 4 GPIO_ACTIVE_LOW>;
 	};
 
 	reg_bt: regulator-bt {
@@ -387,7 +375,6 @@
 	assigned-clock-rates = <0>, <0>, <0>, <100000000>, <250000000>;
 	phy-mode = "rgmii";
 	phy-handle = <&ethphy1>;
-	phy-supply = <&reg_fec2_3v3>;
 	fsl,magic-packet;
 	status = "okay";
 };
@@ -573,9 +560,9 @@
 		lvds_panel
 		{
 			/* InnoLux G070Y2-L01
-			 * FRC = 0 - 6-bits per pixel (default on i.MX7-MB)
+			 * FRC = 0 - 6-bits per pixel (default on i.MX7-MB, should be FRC = 1)
 			 * FRC = 1 - 8-bits per pixel
-			 *  */
+			 */
 			lvds-bpp = <24>;
 			lvds-format = <0>;
 			display-timings
@@ -619,6 +606,7 @@
 };
 
 &mipi_dsi {
+	/* 07.04.2021 - MIPI-DSI doesn't work correctly with kernel 5.4.105 */
 	lcd_panel = "SN65DSI_default";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_mipi_dsi_reset>;
@@ -637,14 +625,6 @@
     reset-gpio   = <&gpio1 9 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
-};
-
-&reg_1p0d {
-	vin-supply = <&sw2_reg>;
-};
-
-&reg_1p2 {
-	vin-supply = <&sw2_reg>;
 };
 
 &sai1 {
@@ -784,7 +764,7 @@
 
 		pinctrl_mipi_dsi_reset: mipi_dsi_reset_grp {
 			fsl,pins = <
-				/* not used on i.MX7-CM */
+				/* not connected on i.MX7-CM */
 				MX7D_PAD_UART3_TX_DATA__GPIO4_IO5 0x1b
 			>;
 		};
@@ -960,7 +940,7 @@
 
 		pinctrl_tsc2046_pendown: tsc2046_pendown {
 			fsl,pins = <
-				/* TSC2046, PENIRQ, CPU ball K23
+				/* TSC2046, PENIRQ, CPU pin K23
 				 * 0x59 - Pull-up 47k
 				 * 0x39 - Pull-up 5k
 				 */
@@ -1131,12 +1111,6 @@
 };
 
 &iomuxc_lpsr {
-	pinctrl_enet2_reg: enet2reggrp {
-		fsl,pins = <
-			MX7D_PAD_LPSR_GPIO1_IO04__GPIO1_IO4	0x80000000
-		>;
-	};
-
 	pinctrl_wdog: wdoggrp {
 		fsl,pins = <
 			MX7D_PAD_LPSR_GPIO1_IO00__WDOG1_WDOG_B		0x74
@@ -1186,10 +1160,10 @@
 	flash0: mx25l25645g@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "macronix,mx25l25645g";
+		compatible = "jedec,spi-nor";
 		spi-max-frequency = <29000000>;
-		/* take off one dummy cycle */
-		spi-nor,ddr-quad-read-dummy = <5>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
 		reg = <0>;
 	};
 };
