@@ -233,10 +233,10 @@ static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
 	else
 		pll_out = sample_rate * 512;
 
-	ret = snd_soc_dai_set_pll(codec_dai, WM8960_SYSCLK_AUTO, 0, data->clk_frequency, pll_out);
+	ret = snd_soc_dai_set_pll(codec_dai, WM8960_SYSCLK_MCLK, 0, data->clk_frequency, pll_out);
 	if (ret)
 		return ret;
-	ret = snd_soc_dai_set_sysclk(codec_dai, WM8960_SYSCLK_AUTO, pll_out, 0);
+	ret = snd_soc_dai_set_sysclk(codec_dai, WM8960_SYSCLK_MCLK, pll_out, 0);
 
 	return ret;
 }
