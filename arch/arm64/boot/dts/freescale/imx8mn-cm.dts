@@ -10,7 +10,7 @@
 
 / {
 	model = "Ronetix i.MX8MN-CM SoM";
-	compatible = "ronetix,imx8mm-cm", "fsl,imx8mm";
+	compatible = "ronetix,imx8mm-cm", "fsl,imx8mn";
 
 	/* 512 MiB @ 0x40000000 */
 	memory@40000000 {
