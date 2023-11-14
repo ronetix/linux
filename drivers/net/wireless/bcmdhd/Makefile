@@ -434,7 +434,7 @@ endif
 endif
 
 ARCH ?= arm64
-BCMDHD_ROOT = $(src)
+BCMDHD_ROOT = $(srctree)/$(src)
 #$(warning "BCMDHD_ROOT=$(BCMDHD_ROOT)")
 EXTRA_CFLAGS = $(DHDCFLAGS)
 EXTRA_CFLAGS += -DDHD_COMPILED=\"$(BCMDHD_ROOT)\"
@@ -445,7 +445,6 @@ endif
 
 obj-$(CONFIG_BCMDHD) += $(MODULE_NAME).o
 $(MODULE_NAME)-objs += $(DHDOFILES)
-ccflags-y := $(EXTRA_CFLAGS)
 
 all: bcmdhd_pcie bcmdhd_sdio bcmdhd_usb
 
