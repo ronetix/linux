@@ -310,11 +310,6 @@
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <1>;
 		};
-
-		ethphy2: ethernet-phy@2 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <2>;
-		};
 	};
 };
 
@@ -329,7 +324,7 @@
 	phy-handle = <&ethphy2>;
 	fsl,magic-packet;
 	status = "okay";
-	/*
+	
 	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -338,10 +333,8 @@
 		ethphy2: ethernet-phy@2 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <2>;
-			eee-broken-1000t;
 		};
 	};
-*/	
 };
 
 &dphy {
