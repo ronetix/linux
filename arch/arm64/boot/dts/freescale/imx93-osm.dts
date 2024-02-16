@@ -39,7 +39,7 @@
 			compatible = "shared-dma-pool";
 			reusable;
 			alloc-ranges = <0 0x80000000 0 0x40000000>;
-			size = <0 0x04000000>;
+			size = <0 0x04000000>;				/* 0x0400_0000 - 64MB */
 			linux,cma-default;
 		};
 
@@ -166,6 +166,13 @@
 		enable-active-high;
 	};
 
+	reg_vdd_12v: regulator-vdd-12v {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_vdd_12v";
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
 	sound-wm8962 {
 		compatible = "fsl,imx-audio-wm8962";
 		model = "wm8962-audio";
@@ -218,20 +225,31 @@
 		};
 	};
 
-	sound-xcvr {
-		compatible = "fsl,imx-audio-card";
-		model = "imx-audio-xcvr";
-		pri-dai-link {
-			link-name = "XCVR PCM";
-			cpu {
-				sound-dai = <&xcvr>;
-			};
-		};
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_backlight>;
+		enable-gpios = <&gpio2 29 GPIO_ACTIVE_HIGH>;
+		power-supply = <&reg_vdd_12v>;
+		pwms = <&tpm5 1 1000000 0>;
+		status = "okay";
+		brightness-levels = < 0  1  2  3  4  5  6  7  8  9
+				     10 11 12 13 14 15 16 17 18 19
+				     20 21 22 23 24 25 26 27 28 29
+				     30 31 32 33 34 35 36 37 38 39
+				     40 41 42 43 44 45 46 47 48 49
+				     50 51 52 53 54 55 56 57 58 59
+				     60 61 62 63 64 65 66 67 68 69
+				     70 71 72 73 74 75 76 77 78 79
+				     80 81 82 83 84 85 86 87 88 89
+				     90 91 92 93 94 95 96 97 98 99
+				    100>;
+		default-brightness-level = <90>;
 	};
 
 	lvds_panel {
-		compatible = "boe,ev121wxm-n10-1850";
-/*		backlight = <&lvds_backlight>;*/
+		compatible = "innolux,g101ice-l01";
+		backlight = <&backlight>;
 
 		port {
 			panel_lvds_in: endpoint {
@@ -356,9 +374,15 @@
 	status = "disabled";
 };
 
+&tpm5 {
+	pinctrl-0 = <&pinctrl_tpm5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lcdif {
 	status = "okay";
-	assigned-clock-rates = <445333333>, <148444444>, <400000000>, <133333333>;
+	assigned-clock-rates = <498000000>, <71142857>, <400000000>, <133333333>;
 };
 
 &ldb {
@@ -380,7 +404,6 @@
 &ldb_phy {
 	status = "okay";
 };
-
 
 &lpm {
 	soc-supply = <&buck1>;
@@ -434,7 +457,6 @@
 		assigned-clocks = <&clk IMX93_CLK_CCM_CKO1>;
 		assigned-clock-rates = <24000000>;
 		clock-names = "xclk";
-		
 		csi_id = <0>;
 		mclk = <24000000>;
 		mclk_source = <0>;
@@ -662,6 +684,18 @@
 		>;
 	};
 
+	pinctrl_backlight: backlightgrp {
+		fsl,pins = <
+			MX93_PAD_GPIO_IO29__GPIO2_IO29  0x31e 	/* LCD_BL_EN */
+		>;
+	};
+	
+	pinctrl_tpm5: tpm5grp {
+		fsl,pins = <
+			MX93_PAD_GPIO_IO22__TPM5_CH1 		0x51e
+		>;
+	};
+
 	pinctrl_pcal6416: pcal6416grp {
 		fsl,pins = <
 			MX93_PAD_CCM_CLKO2__GPIO3_IO27			0x31e
@@ -670,20 +704,20 @@
 
 	pinctrl_eqos: eqosgrp {
 		fsl,pins = <
-			MX93_PAD_ENET1_MDC__ENET_QOS_MDC			0x57e
-			MX93_PAD_ENET1_MDIO__ENET_QOS_MDIO			0x57e
+			MX93_PAD_ENET1_MDC__ENET_QOS_MDC				0x57e
+			MX93_PAD_ENET1_MDIO__ENET_QOS_MDIO				0x57e
 			MX93_PAD_ENET1_RD0__ENET_QOS_RGMII_RD0			0x57e
 			MX93_PAD_ENET1_RD1__ENET_QOS_RGMII_RD1			0x57e
 			MX93_PAD_ENET1_RD2__ENET_QOS_RGMII_RD2			0x57e
 			MX93_PAD_ENET1_RD3__ENET_QOS_RGMII_RD3			0x57e
 			MX93_PAD_ENET1_RXC__CCM_ENET_QOS_CLOCK_GENERATE_RX_CLK	0x5fe
-			MX93_PAD_ENET1_RX_CTL__ENET_QOS_RGMII_RX_CTL		0x57e
+			MX93_PAD_ENET1_RX_CTL__ENET_QOS_RGMII_RX_CTL	0x57e
 			MX93_PAD_ENET1_TD0__ENET_QOS_RGMII_TD0			0x57e
 			MX93_PAD_ENET1_TD1__ENET_QOS_RGMII_TD1			0x57e
 			MX93_PAD_ENET1_TD2__ENET_QOS_RGMII_TD2			0x57e
 			MX93_PAD_ENET1_TD3__ENET_QOS_RGMII_TD3			0x57e
 			MX93_PAD_ENET1_TXC__CCM_ENET_QOS_CLOCK_GENERATE_TX_CLK	0x5fe
-			MX93_PAD_ENET1_TX_CTL__ENET_QOS_RGMII_TX_CTL		0x57e
+			MX93_PAD_ENET1_TX_CTL__ENET_QOS_RGMII_TX_CTL	0x57e
 		>;
 	};
 
@@ -852,4 +886,3 @@
 		};
 	};
 };
-
