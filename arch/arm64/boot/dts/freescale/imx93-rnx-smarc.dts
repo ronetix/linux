@@ -191,18 +191,6 @@
 			"IN1R", "AMIC";
 	};
 
-	sound-micfil {
-		compatible = "fsl,imx-audio-card";
-		model = "micfil-audio";
-		pri-dai-link {
-			link-name = "micfil hifi";
-			format = "i2s";
-			cpu {
-				sound-dai = <&micfil>;
-			};
-		};
-	};
-
 	bt_sco_codec: bt_sco_codec {
 		#sound-dai-cells = <1>;
 		compatible = "linux,bt-sco";
@@ -281,34 +269,6 @@
 	status = "okay";
 };
 
-&micfil {
-	#sound-dai-cells = <0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pdm>;
-	assigned-clocks = <&clk IMX93_CLK_PDM>;
-	assigned-clock-parents = <&clk IMX93_CLK_AUDIO_PLL>;
-	assigned-clock-rates = <49152000>;
-	status = "okay";
-};
-
-&xcvr {
-	#sound-dai-cells = <0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_spdif>;
-	clocks = <&clk IMX93_CLK_BUS_WAKEUP>,
-		<&clk IMX93_CLK_SPDIF_GATE>,
-		<&clk IMX93_CLK_DUMMY>,
-		<&clk IMX93_CLK_AUD_XCVR_GATE>,
-		<&clk IMX93_CLK_AUDIO_PLL>;
-	clock-names = "ipg", "phy", "spba", "pll_ipg", "pll8k";
-	assigned-clocks = <&clk IMX93_CLK_SPDIF>,
-			 <&clk IMX93_CLK_AUDIO_XCVR>;
-	assigned-clock-parents = <&clk IMX93_CLK_AUDIO_PLL>,
-			 <&clk IMX93_CLK_SYS_PLL_PFD1_DIV2>;
-	assigned-clock-rates = <12288000>, <200000000>;
-	status = "okay";
-};
-	
 &adc1 {
 	vref-supply = <&reg_vref_1v8>;
 	status = "okay";
@@ -415,10 +375,6 @@
 	status = "okay";
 };
 
-/*
- * When add, delete or change any target device setting in &lpi2c1,
- * please synchronize the changes to the &i3c1 bus in imx93-11x11-evk-i3c.dts.
- */
 &lpi2c1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -829,21 +785,6 @@
 			MX93_PAD_GPIO_IO17__SAI3_MCLK		0x31e
 			MX93_PAD_GPIO_IO19__SAI3_TX_DATA00		0x31e
 			MX93_PAD_GPIO_IO20__SAI3_RX_DATA00		0x31e
-		>;
-	};
-
-	pinctrl_pdm: pdmgrp {
-		fsl,pins = <
-			MX93_PAD_PDM_CLK__PDM_CLK			0x31e
-			MX93_PAD_PDM_BIT_STREAM0__PDM_BIT_STREAM00	0x31e
-			MX93_PAD_PDM_BIT_STREAM1__PDM_BIT_STREAM01	0x31e
-		>;
-	};
-
-	pinctrl_spdif: spdifgrp {
-		fsl,pins = <
-			MX93_PAD_GPIO_IO22__SPDIF_IN		0x31e
-			MX93_PAD_GPIO_IO23__SPDIF_OUT		0x31e
 		>;
 	};
 
