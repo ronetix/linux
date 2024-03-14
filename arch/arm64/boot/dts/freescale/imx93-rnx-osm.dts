@@ -176,6 +176,8 @@
 	sound-wm8962 {
 		compatible = "fsl,imx-audio-wm8962";
 		model = "wm8962-audio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_wm8962>;
 		audio-cpu = <&sai3>;
 		audio-codec = <&codec>;
 		hp-det-gpio = <&gpio2 15 GPIO_ACTIVE_HIGH>;
@@ -791,6 +793,12 @@
 	pinctrl_usbotg2: usbotg2grp {
 		fsl,pins = <
 			MX93_PAD_CCM_CLKO4__GPIO4_IO29		0x31e
+		>;
+	};
+	
+	pinctrl_wm8962: wm8962grp {
+		fsl,pins = <
+				MX93_PAD_GPIO_IO15__GPIO2_IO15				0x31e	/* Headphone detect */
 		>;
 	};
 };
