@@ -29,6 +29,16 @@
 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=on";
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		debug-led0 {
+			label = "HEARTBEAT";
+			gpios = <&pinctrl RZG2L_GPIO(8, 4) GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+	};
+
 	memory@48000000 {
 		device_type = "memory";
 		/* first 128MB is reserved for secure area. */
@@ -93,6 +103,15 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "USB1_VBUS";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpios = <&pcal6416 15 GPIO_ACTIVE_LOW>;
+		enable-active-low;
+	};
+
 	vccq_sdhi1: regulator-vccq-sdhi1 {
 		compatible = "regulator-gpio";
 		regulator-name = "SDHI1 VccQ";
@@ -120,14 +139,19 @@
 		simple-audio-card,bitclock-master = <&cpu_dai>;
 		simple-audio-card,frame-master = <&cpu_dai>;
 		simple-audio-card,mclk-fs = <256>;
-
-		simple-audio-card,widgets = "Microphone", "Microphone Jack";
-		simple-audio-card,routing =
-			    "L2", "Mic Bias",
-			    "R2", "Mic Bias",
-			    "Mic Bias", "Microphone Jack";
+		pinctrl-names = "default";
+		simple-audio-card,widgets = "Headphone", "Headphones",
+								    "Microphone", "Headset Mic",
+								    "Speaker", "Speaker";
+		simple-audio-card,routing = "Headphones", "HPOUTL",
+					    "Headphones", "HPOUTR",
+					    "Speaker", "SPKOUTL",
+					    "Speaker", "SPKOUTR",
+					    "Headset Mic", "MICBIAS",
+					    "IN3R", "Headset Mic";
 
 		cpu_dai: simple-audio-card,cpu {
+			sound-dai = <&ssi0>;
 		};
 
 		codec_dai: simple-audio-card,codec {
@@ -333,7 +357,19 @@
 	pinctrl-0 = <&i2c0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	
+
+	pcal6416: gpio@20 {
+		compatible = "nxp,pcal6416";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcal6416_pins>;
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&pinctrl RZG2L_GPIO(10, 4) GPIO_ACTIVE_LOW>;
+	};
+
 	pmic: raa215300@12 {
 		compatible = "renesas,raa215300";
 		reg = <0x12>;
@@ -342,6 +378,8 @@
 
 	wm8962: codec@1a {
 		compatible = "wlf,wm8962";
+		pinctrl-0 = <&wm8962_pins>;
+		hp-det-gpio = <&pinctrl RZG2L_GPIO(7, 4) GPIO_ACTIVE_HIGH>;
 		#sound-dai-cells = <0>;
 		reg = <0x1a>;
 		gpio-cfg = <
@@ -429,6 +467,12 @@
 	status = "okay";
 };
 
+&ssi0 {
+	pinctrl-0 = <&ssi0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &usb2_phy0 {
 	pinctrl-0 = <&usb0_pins>;
 	pinctrl-names = "default";
@@ -440,7 +484,7 @@
 &usb2_phy1 {
 	pinctrl-0 = <&usb1_pins>;
 	pinctrl-names = "default";
-
+	vbus-supply = <&usb1_vbus>;
 	status = "okay";
 };
 
@@ -481,10 +525,6 @@
 			};
 		};
 	};
-};
-
-&cpu_dai {
-	sound-dai = <&ssi0>;
 };
 
 &sci0 {
@@ -614,6 +654,10 @@
 		input-enable;
 	};
 
+	pcal6416_pins: pcal6416 {
+		pinmux = <RZG2L_PORT_PINMUX(10, 4, 1)>; /* nINT */
+	};
+
 	/* OSM: I2S_A */
 	ssi0_pins: ssi0 {
 		pinmux = <RZG2L_PORT_PINMUX(10, 0, 2)>, /* BCK */
@@ -677,4 +721,9 @@
 			pinmux = <RZG2L_PORT_PINMUX(11, 3, 6)>; /* CLK */
 		};
 	};
+
+	wm8962_pins: wm8962grp {
+		pinmux = <RZG2L_PORT_PINMUX(7, 4, 1)>; 	/* Headphone detect */
+	};
+
 };
