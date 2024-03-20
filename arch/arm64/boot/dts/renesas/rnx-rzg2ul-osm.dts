@@ -34,7 +34,7 @@
 
 		debug-led0 {
 			label = "HEARTBEAT";
-			gpios = <&pinctrl RZG2L_GPIO(8, 4) GPIO_ACTIVE_HIGH>;
+			gpios = <&pinctrl RZG2L_GPIO(6, 2) GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "heartbeat";
 		};
 	};
