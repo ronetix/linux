@@ -40,7 +40,6 @@
 	};
 };
 
-
 &sai1 {
 	pinctrl-names = "default", "dsd";
 	pinctrl-0 = <&pinctrl_sai1>;
@@ -144,61 +143,5 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_SD1_STROBE_GPIO2_IO11	0x159
 		>;
-	};
-};
-
-&lcdif {
-	status = "okay";
-};
-
-&pwm1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
-};
-
-&mipi_csi_1 {
-	#address-cells = <1>;
-	#size-cells = <0>;
-	status = "okay";
-	port {
-		mipi1_sensor_ep: endpoint@1 {
-			remote-endpoint = <&ov5640_mipi1_ep>;
-			data-lanes = <2>;
-			csis-hs-settle = <13>;
-			csis-clk-settle = <2>;
-			csis-wclk;
-		};
-
-		csi1_mipi_ep: endpoint@2 {
-			remote-endpoint = <&csi1_ep>;
-		};
-	};
-};
-
-&vpu_g1 {
-	status = "okay";
-};
-
-&vpu_g2 {
-	status = "okay";
-};
-
-&vpu_h1 {
-	status = "okay";
-};
-
-&gpu {
-	status = "okay";
-};
-
-&mipi_dsi {
-	status = "okay";
-
-	port@1 {
-		mipi_dsi_out: endpoint {
-			remote-endpoint = <&dsi_lvds_bridge_in>;
-			attach-bridge;
-		};
 	};
 };
