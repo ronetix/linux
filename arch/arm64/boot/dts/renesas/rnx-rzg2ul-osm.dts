@@ -344,7 +344,7 @@
 	};
 
 	channel1 {
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -450,7 +450,7 @@
 &scif0 {
 	pinctrl-0 = <&scif0_pins>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &sdhi1 {
@@ -612,7 +612,7 @@
 			power-source = <1800>;
 		};
 	};
-	
+
 	/* OSM: CAN_A */
 	can1_pins: can1 {
 		pinmux = <RZG2L_PORT_PINMUX(17, 0, 3)>, /* TX */
@@ -647,7 +647,6 @@
 		pinmux = <RZG2L_PORT_PINMUX(2, 2, 5)>, /* TxD */
 				 <RZG2L_PORT_PINMUX(2, 3, 5)>; /* RxD */
 	};
-
 
 	sound_clk_pins: sound_clk {
 		pins = "AUDIO_CLK1", "AUDIO_CLK2";
