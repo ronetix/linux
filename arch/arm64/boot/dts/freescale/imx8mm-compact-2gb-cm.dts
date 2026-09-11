@@ -70,6 +70,25 @@
 };
 
 &fec1 {
+	mdio {
+		ethphy0: ethernet-phy@1 {
+			compatible = "ethernet-phy-id0022.1640",
+			     		 "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+			rxc-skew-psec = <2400>;
+			txc-skew-psec = <2400>;
+			rxdv-skew-psec = <0>;
+			txen-skew-psec = <0>;
+			rxd0-skew-psec = <0>;
+			rxd1-skew-psec = <0>;
+			rxd2-skew-psec = <0>;
+			rxd3-skew-psec = <0>;
+			txd0-skew-psec = <0>;
+			txd1-skew-psec = <0>;
+			txd2-skew-psec = <0>;
+			txd3-skew-psec = <0>;
+		};
+	};
 };
 
 &iomuxc {
