@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2021-2026 Ronetix GmbH
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/usb/pd.h>
+#include "imx8mm.dtsi"
+#include "imx8mm-ronetix.dtsi"
+
+/ {
+	model = "Ronetix i.MX8MM-COMPACT-CM SoM";
+	compatible = "ronetix,imx8mm-compact-cm", "fsl,imx8mm";
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* global autoconfigured region for contiguous allocations */
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0 0x04000000>;	/* 64 MiB */
+			alloc-ranges = <0 0x40000000 0 0x40000000>;
+			linux,cma-default;
+		};
+	};
+
+	reg_usb_otg1_vbus: regulator-usb-otg1-vbus {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb_otg1_vbus_reg>;
+		regulator-name = "usb_otg1_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&fec1_mdio {
+	/* AR8031 */
+	ethphy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+		reset-gpios = <&gpio4 29 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+		qca,disable-smarteee;
+		eee-broken-100tx;
+		eee-broken-1000t;
+		vddio-supply = <&vddio>;
+
+		vddio: vddio-regulator {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+	};
+};
+
+&usbotg1 {
+	vbus-supply = <&reg_usb_otg1_vbus>;
+	status = "okay";
+};
+
+&usbotg2 {
+	status = "okay";
+};
+
+&iomuxc {
+	pinctrl_pcie0: pcie0grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B		0x61	/* PCIe_CLKREQ, open drain, pull up */
+			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x41	/* PCIe_nDIS */
+			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21		0x41	/* PCIe_nRST */
+		>;
+	};
+
+	pinctrl_usb_otg1_vbus_reg: usbotg1vbusreggrp {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12		0x19
+		>;
+	};
+};
