@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2020-2026 Ronetix GmbH, Ilko Iliev <iliev@ronetix.at>
+ *
+ * Ronetix i.MX8MQ-CM SoM with an LVDS display:
+ * LCDIF -> MIPI-DSI -> SN65DSI83 -> LVDS panel
+ */
+
+/dts-v1/;
+
+#include "imx8mq-cm.dtsi"
+
+&backlight {
+	status = "okay";
+};
+
+/* GPIO1_IO03 is used as LCD_BL_EN, it is also the MIPI-CSI1 camera PWDN */
+&camera1 {
+	status = "disabled";
+};
+
+&dphy {
+	status = "okay";
+};
+
+&dsi_lvds_bridge {
+	status = "okay";
+};
+
+&lcdif {
+	status = "okay";
+};
+
+&mipi_dsi {
+	status = "okay";
+};
+
+&panel {
+	status = "okay";
+};
+
+&pwm1 {
+	status = "okay";
+};

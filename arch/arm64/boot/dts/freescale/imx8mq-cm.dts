@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2020-2026 Ronetix GmbH, Ilko Iliev <iliev@ronetix.at>
+ *
+ * Ronetix i.MX8MQ-CM SoM without display.
+ * HDMI is not supported by the mainline kernel.
+ */
+
+/dts-v1/;
+
+#include "imx8mq-cm.dtsi"
