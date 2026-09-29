@@ -874,6 +874,7 @@ properties:
               - kam,imx7d-flex-concentrator-mfg   # Kamstrup OMNIA Flex Concentrator in manufacturing mode
               - novtech,imx7d-meerkat96   # i.MX7 Meerkat96 Board
               - remarkable,imx7d-remarkable2  # i.MX7D ReMarkable 2 E-Ink Tablet
+              - ronetix,imx7-cm           # Ronetix i.MX7-CM SoM
               - storopack,imx7d-smegw01       # Storopack i.MX7D SMEGW01
               - technexion,imx7d-pico-dwarf   # TechNexion i.MX7D Pico-Dwarf
               - technexion,imx7d-pico-hobbit  # TechNexion i.MX7D Pico-Hobbit
@@ -950,6 +951,9 @@ properties:
               - innocomm,wb15-evk         # i.MX8MM Innocomm EVK board with WB15 SoM
               - kontron,imx8mm-sl         # i.MX8MM Kontron SL (N801X) SOM
               - kontron,imx8mm-osm-s      # i.MX8MM Kontron OSM-S (N802X) SOM
+              - ronetix,imx8mm-cm         # Ronetix i.MX8MM-CM SoM
+              - ronetix,imx8mm-compact-2gb-cm # Ronetix i.MX8MM-COMPACT-2GB-CM SoM
+              - ronetix,imx8mm-compact-cm # Ronetix i.MX8MM-COMPACT-CM SoM
               - toradex,verdin-imx8mm     # Verdin iMX8M Mini Modules
               - toradex,verdin-imx8mm-nonwifi  # Verdin iMX8M Mini Modules without Wi-Fi / BT
               - toradex,verdin-imx8mm-wifi  # Verdin iMX8M Mini Wi-Fi / BT Modules
@@ -1048,6 +1052,8 @@ properties:
               - fsl,imx8mn-ddr4-evk       # i.MX8MN DDR4 EVK Board
               - fsl,imx8mn-evk            # i.MX8MN LPDDR4 EVK Board
               - gw,imx8mn-gw7902          # i.MX8MM Gateworks Board
+              - ronetix,imx8mn-cm         # Ronetix i.MX8MN-CM SoM
+              - ronetix,imx8mn-compact-cm # Ronetix i.MX8MN-COMPACT-CM SoM
           - const: fsl,imx8mn
 
       - description: Variscite VAR-SOM-MX8MN based boards
@@ -1183,6 +1189,7 @@ properties:
               - google,imx8mq-phanbell    # Google Coral Edge TPU
               - kontron,pitx-imx8m        # Kontron pITX-imx8m Board
               - purism,librem5-devkit     # Purism Librem5 devkit
+              - ronetix,imx8mq-cm         # Ronetix i.MX8MQ-CM SoM
               - solidrun,hummingboard-pulse # SolidRun Hummingboard Pulse
               - technexion,pico-pi-imx8m  # TechNexion PICO-PI-8M evk
           - const: fsl,imx8mq
