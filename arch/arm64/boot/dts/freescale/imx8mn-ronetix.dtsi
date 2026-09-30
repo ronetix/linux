@@ -127,10 +127,11 @@
 	};
 };
 
+/* QSPI flash only on the i.MX8MN-CM, enabled in imx8mn-cm.dts */
 &flexspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexspi0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c1 {
