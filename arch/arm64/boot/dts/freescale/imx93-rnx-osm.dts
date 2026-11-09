@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2022 NXP
+ * Copyright 2023-2026 Ronetix GmbH
+ *
+ * Ronetix RNX-iMX93-OSM, 1GB LPDDR4X
+ */
+
+/dts-v1/;
+
+#include "imx93-rnx-som.dtsi"
+
+/ {
+	model = "Ronetix RNX-iMX93-OSM board";
+	compatible = "fsl,imx93-osm", "fsl,imx93";
+};
+
+&led_heartbeat {
+	gpios = <&gpio2 18 GPIO_ACTIVE_HIGH>;
+};
+
+&sound_wm8962 {
+	hp-det-gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;
+};
+
+&backlight {
+	enable-gpios = <&gpio2 29 GPIO_ACTIVE_HIGH>;
+};
+
+&usdhc2 {
+	cd-gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
+};
+
+&iomuxc {
+	pinctrl_backlight: backlightgrp {
+		fsl,pins = <
+			MX93_PAD_GPIO_IO29__GPIO2_IO29		0x31e	/* LCD_BL_EN */
+		>;
+	};
+
+	pinctrl_wm8962: wm8962grp {
+		fsl,pins = <
+			MX93_PAD_GPIO_IO15__GPIO2_IO15		0x31e	/* Headphone detect */
+		>;
+	};
+};
