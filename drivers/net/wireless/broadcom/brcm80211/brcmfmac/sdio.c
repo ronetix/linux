@@ -1348,6 +1348,31 @@ static void brcmf_sdio_free_glom(struct brcmf_sdio *bus)
 #define SDPCM_FCMASK_MASK		0x000000ff
 #define SDPCM_WINDOW_MASK		0x0000ff00
 #define SDPCM_WINDOW_SHIFT		8
+/*
+ * Plausibility limit for the TX credit window the firmware advertises in
+ * the SDPCM software header, measured as an unsigned distance from
+ * bus->tx_seq. 0x70 is the value the vendor bcmdhd driver uses (three
+ * times in dhd_sdio.c, "Check window for sanity"); brcmfmac used 0x40.
+ *
+ * Note what this test actually catches. Because the subtraction is done
+ * in u8, a window that is slightly *behind* tx_seq appears as a very
+ * large distance: measured on a BCM43752A2 (AP6275S) under iperf3 load,
+ *   txmax 46,  tx_seq 48  -> (u8)(46-48)   = 254
+ *   txmax 139, tx_seq 150 -> (u8)(139-150) = 245
+ * Both exceed 0x40 and 0x70 alike, so the limit is not what matters here.
+ * A window a few frames behind tx_seq is normal and harmless: the frame
+ * carries the window as it was when the firmware built it, and the host
+ * has sent a few more frames since.
+ *
+ * What matters is the recovery. brcmfmac used to clamp the window to
+ * bus->tx_seq + 2, i.e. two credits, on every such frame - which under
+ * load is self sustaining and starved TX completely: the interface came
+ * up and the firmware answered control commands, but no traffic flowed.
+ * bcmdhd keeps the last known good window instead, which is what we do,
+ * and logs at DHD_INFO rather than as an error because the condition is
+ * expected. Hence brcmf_dbg() below and not brcmf_err().
+ */
+#define SDPCM_MAX_TX_WINDOW		0x70
 
 static inline u8 brcmf_sdio_getdatoffset(u8 *swheader)
 {
@@ -1469,9 +1494,10 @@ static int brcmf_sdio_hdparse(struct brcmf_sdio *bus, u8 *header,
 		bus->flowcontrol = fc;
 	}
 	tx_seq_max = (swheader & SDPCM_WINDOW_MASK) >> SDPCM_WINDOW_SHIFT;
-	if ((u8)(tx_seq_max - bus->tx_seq) > 0x40) {
-		brcmf_err("seq %d: max tx seq number error\n", rx_seq);
-		tx_seq_max = bus->tx_seq + 2;
+	if ((u8)(tx_seq_max - bus->tx_seq) > SDPCM_MAX_TX_WINDOW) {
+		brcmf_dbg(SDIO, "seq %d: tx window %u not plausible for tx_seq %u, keeping %u\n",
+			  rx_seq, tx_seq_max, bus->tx_seq, bus->tx_max);
+		tx_seq_max = bus->tx_max;
 	}
 	bus->tx_max = tx_seq_max;
 
