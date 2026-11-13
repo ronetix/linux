@@ -714,13 +714,30 @@ brcmf_sdio_kso_control(struct brcmf_sdio *bus, bool on)
 	/* 1st KSO write goes to AOS wake up core if device is asleep  */
 	brcmf_sdiod_writeb(bus->sdiodev, SBSDIO_FUNC1_SLEEPCSR, wr_val, &err);
 
-	/* In case of 43012 chip, the chip could go down immediately after
-	 * KSO bit is cleared. So the further reads of KSO register could
-	 * fail. Thereby just bailing out immediately after clearing KSO
-	 * bit, to avoid polling of KSO bit.
+	/* Some chips go down immediately after the KSO bit is cleared, so
+	 * the readback below fails. Bail out right after clearing the bit
+	 * instead of polling it.
+	 *
+	 * These are the chips that use the always-on-sleep path without
+	 * CMD14 decoding, see brcmf_sdio_aos_no_decode(): the 43012, and
+	 * the 43751/43752. On a BCM43752A2 (AP6275S) the poll produced a
+	 * CMD52 timeout on the transition to sleep,
+	 *   brcmfmac: brcmf_sdio_bus_sleep: error while changing bus
+	 *       sleep state -110
+	 * and because brcmf_sdio_bus_sleep() jumps to its "done" label on
+	 * that error, it never reached "bus->sleeping = sleep" - leaving
+	 * the driver believing the bus was awake after the chip had in
+	 * fact gone to sleep.
+	 *
+	 * Leave through the cleanup below instead of returning here, so
+	 * sdio_retune_crc_enable() is not skipped. The 43012 path has been
+	 * returning with host->retune_crc_disable still set, and only the
+	 * next wake cleared it again.
 	 */
-	if (!on && bus->ci->chip == CY_CC_43012_CHIP_ID)
-		return err;
+	if (!on && (bus->ci->chip == CY_CC_43012_CHIP_ID ||
+		    bus->ci->chip == BRCM_CC_43751_CHIP_ID ||
+		    bus->ci->chip == BRCM_CC_43752_CHIP_ID))
+		goto out;
 
 	if (on) {
 		/* device WAKEUP through KSO:
@@ -770,6 +787,10 @@ brcmf_sdio_kso_control(struct brcmf_sdio *bus, bool on)
 	if (try_cnt > MAX_KSO_ATTEMPTS)
 		brcmf_err("max tries: rd_val=0x%x err=%d\n", rd_val, err);
 
+out:
+	/* sdio_retune_hold_now() above is paired with this, and is only
+	 * taken for "on", so the early goto cannot unbalance it.
+	 */
 	if (on)
 		sdio_retune_release(bus->sdiodev->func1);
 
