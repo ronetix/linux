@@ -486,9 +486,11 @@
 	 *   ov5640 0-003c: ov5640_write_reg: error: reg=3008, val=82
 	 *   ov5640 0-003c: failed to power on
 	 *   ov5640 0-003c: probe with driver ov5640 failed with error -5
-	 * on every boot. Enable it (together with the carrier wiring) when
-	 * a camera is actually connected. &isi, &mipi_csi and &dphy_rx stay
-	 * enabled, so only the sensor has to be turned on here.
+	 * on every boot.
+	 *
+	 * The rest of the capture pipeline - &mipi_csi, &dphy_rx and &isi -
+	 * is disabled with it, see &mipi_csi below. To use a camera, set all
+	 * four to "okay" and wire it up on the carrier.
 	 */
 	ov5640_mipi: ov5640_mipi@3c {
 		compatible = "ovti,ov5640";
@@ -904,7 +906,8 @@
 };
 
 &isi {
-	status = "okay";
+	/* enabled together with the camera, see &ov5640_mipi */
+	status = "disabled";
 
 	port {
 		isi_in: endpoint {
@@ -914,7 +917,26 @@
 };
 
 &mipi_csi {
-	status = "okay";
+	/*
+	 * Disabled while no camera is fitted, and not only for tidiness:
+	 * dwc_csi_async_register() looks the sensor up with
+	 * fwnode_graph_get_endpoint_by_id(), which skips endpoints whose
+	 * remote node is unavailable. With the sensor disabled it finds
+	 * none and returns -ENOTCONN, so the probe fails on every boot
+	 *   dwc-mipi-csi2 4ae00000.csi: Async register failed
+	 *   dwc-mipi-csi2 4ae00000.csi: probe with driver dwc-mipi-csi2
+	 *       failed with error -107
+	 * and, because a consumer of the media block never probes, the
+	 * block controller cannot run its sync_state()
+	 *   imx93-blk-ctrl 4ac10000.system-controller: sync_state() pending
+	 *       due to 4ae00000.csi
+	 * which leaves that block's clocks and power domain held in the
+	 * state the boot left them in.
+	 *
+	 * The i.MX93 EVK keeps these nodes enabled because it expects a
+	 * camera; on a SoM the camera is optional and usually absent.
+	 */
+	status = "disabled";
 
 	ports {
 		#address-cells = <1>;
@@ -942,5 +964,6 @@
 };
 
 &dphy_rx {
-	status = "okay";
+	/* enabled together with the camera, see &ov5640_mipi */
+	status = "disabled";
 };
