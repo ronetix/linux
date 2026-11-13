@@ -324,6 +324,11 @@ struct rte_console {
 #define BRCMF_IDLE_INTERVAL	1
 
 #define KSO_WAIT_US 50
+#define KSO_WAIT_MS 1
+/* Sleep rather than udelay() every so many attempts, see
+ * brcmf_sdio_kso_control()
+ */
+#define KSO_SLEEP_RETRY_COUNT 20
 #define MAX_KSO_ATTEMPTS (PMU_MAX_TRANSITION_DLY/KSO_WAIT_US)
 #define BRCMF_SDIO_MAX_ACCESS_ERRORS	5
 
@@ -694,13 +699,25 @@ static bool txctl_ok(struct brcmf_sdio *bus)
 	       ((bus->tx_max - bus->tx_seq) & 0x80) == 0;
 }
 
+static bool brcmf_sdio_aos_no_decode(struct brcmf_sdio *bus)
+{
+	if (bus->ci->chip == BRCM_CC_43751_CHIP_ID ||
+	    bus->ci->chip == BRCM_CC_43752_CHIP_ID ||
+	    bus->ci->chip == CY_CC_43012_CHIP_ID)
+		return true;
+	else
+		return false;
+}
+
 static int
 brcmf_sdio_kso_control(struct brcmf_sdio *bus, bool on)
 {
 	u8 wr_val = 0, rd_val, cmp_val, bmask;
+	bool aos = brcmf_sdio_aos_no_decode(bus);
 	int err = 0;
 	int err_cnt = 0;
 	int try_cnt = 0;
+	int slp_cnt = 0;
 
 	brcmf_dbg(TRACE, "Enter: on=%d\n", on);
 
@@ -770,11 +787,28 @@ brcmf_sdio_kso_control(struct brcmf_sdio *bus, bool on)
 				break;
 			err_cnt = 0;
 		}
-		/* bail out upon subsequent access errors */
-		if (err && (err_cnt++ > BRCMF_SDIO_MAX_ACCESS_ERRORS))
+		/* Bail out upon subsequent access errors - but not while
+		 * waking a chip that comes up through the AOS core. Those
+		 * do not answer CMD52 for the first few milliseconds after
+		 * the KSO write, so this guard used to abandon the wake
+		 * after ~6 attempts and leave the caller believing the bus
+		 * was still asleep. MAX_KSO_ATTEMPTS still bounds the wait.
+		 */
+		if (err && !(on && aos) &&
+		    (err_cnt++ > BRCMF_SDIO_MAX_ACCESS_ERRORS))
 			break;
 
-		udelay(KSO_WAIT_US);
+		/* Do not busy wait out the whole attempt budget: at
+		 * KSO_WAIT_US each, MAX_KSO_ATTEMPTS is a second of
+		 * udelay(). Sleep every KSO_SLEEP_RETRY_COUNT attempts
+		 * instead, as the vendor driver does.
+		 */
+		if (++slp_cnt % KSO_SLEEP_RETRY_COUNT == 0)
+			usleep_range(KSO_WAIT_MS * 1000,
+				     2 * KSO_WAIT_MS * 1000);
+		else
+			udelay(KSO_WAIT_US);
+
 		brcmf_sdiod_writeb(bus->sdiodev, SBSDIO_FUNC1_SLEEPCSR, wr_val,
 				   &err);
 
@@ -1014,8 +1048,8 @@ brcmf_sdio_bus_sleep(struct brcmf_sdio *bus, bool sleep, bool pendok)
 			err = brcmf_sdio_kso_control(bus, true);
 		}
 		if (err) {
-			brcmf_err("error while changing bus sleep state %d\n",
-				  err);
+			brcmf_err("error changing bus sleep state to %s: %d\n",
+				  sleep ? "SLEEP" : "WAKE", err);
 			goto done;
 		}
 	}
@@ -3469,16 +3503,6 @@ err:
 	brcmf_sdio_clkctl(bus, CLK_SDONLY, false);
 	sdio_release_host(bus->sdiodev->func1);
 	return bcmerror;
-}
-
-static bool brcmf_sdio_aos_no_decode(struct brcmf_sdio *bus)
-{
-	if (bus->ci->chip == BRCM_CC_43751_CHIP_ID ||
-	    bus->ci->chip == BRCM_CC_43752_CHIP_ID ||
-	    bus->ci->chip == CY_CC_43012_CHIP_ID)
-		return true;
-	else
-		return false;
 }
 
 static void brcmf_sdio_sr_init(struct brcmf_sdio *bus)
